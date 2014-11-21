@@ -1,0 +1,4 @@
+generators
+==========
+
+Some rails generators
