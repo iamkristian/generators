@@ -31,12 +31,23 @@ gem 'foreman'
 gem 'rails-i18n'
 gem 'unicorn-rails'
 
+if yes? "Do you want to create a root controller?"
+  name = ask("What should it be called?").underscore
+  generate :controller, "#{name} index --skip-routes --skip-assets"
+  route "root to: '#{name}\#index'"
+end
+
 if yes? "Do you want to use Devise?"
   gem 'devise'
   generate "devise:install"
+  inject_into_file 'config/environments/development.rb', after: "Rails.application.configure do\n" do
+    "config.action_mailer.default_url_options = { host: 'localhost', port: 3000 }"
+  end
   model_name = ask("What would you like the user model to be called? [user]")
   model_name = "user" if model_name.blank?
   generate "devise", model_name
+  gem 'cancancan'
+  generate 'cancan:ability'
 end
 
 if yes? "Do you want to use Simple_form?"
@@ -54,6 +65,8 @@ Rails.application.config do
   config.cache_classes = true
   config.eager_load = true
 
+  config.host = "#{@app_name}-staging.herokuapp.com"
+
   config.consider_all_requests_local       = false
   config.action_controller.perform_caching = true
   config.serve_static_files = ENV['RAILS_SERVE_STATIC_FILES'].present?
@@ -68,6 +81,17 @@ Rails.application.config do
 
   config.log_formatter = ::Logger::Formatter.new
   config.active_record.dump_schema_after_migration = false
+
+  config.action_mailer.default_url_options = { :host => config.host }
+  config.action_mailer.delivery_method = :smtp
+  config.action_mailer.smtp_settings = {
+    :port           => ENV['MAILGUN_SMTP_PORT'],
+    :address        => ENV['MAILGUN_SMTP_SERVER'],
+    :user_name      => ENV['MAILGUN_SMTP_LOGIN'],
+    :password       => ENV['MAILGUN_SMTP_PASSWORD'],
+    :domain         => 'yourapp.heroku.com',
+    :authentication => :plain,
+  }
 end
 EOF
   end
@@ -114,11 +138,5 @@ end
 run "bundle install"
 
 generate "rspec:install"
-
-if yes? "Do you want to create a root controller?"
-  name = ask("What should it be called?").underscore
-  generate :controller, "#{name} index --skip-routes --skip-assets"
-  route "root to: '#{name}\#index'"
-end
 
 git :init
