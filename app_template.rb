@@ -2,7 +2,7 @@ remove_file "README.rdoc"
 create_file "README.md", "# TODO"
 
 gem_group :test, :development do
-  gem 'rspec-rails', '~> 3.1'
+  gem 'rspec-rails', '~> 3.2'
   gem 'forgery'
   gem 'capybara'
   gem 'poltergeist'
